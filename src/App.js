@@ -1,9 +1,44 @@
 import "./App.css";
 import { useState } from "react";
 import { Formik } from "formik";
+import * as Yup from "yup";
 
 function App() {
   const [hasRegistred, setHasRegistred] = useState(false);
+
+  const validationSchema = Yup.object({
+    name: Yup.string()
+      .required("Required")
+      .min(3, "Name should consist of more than two symbol"),
+    email: Yup.string().required("Required").email("Invalid email address"),
+    password: Yup.string()
+      .required("Required")
+      .min(6, "Password should has length more than 6 symbols")
+      .matches(
+        /^[A-Z0-9._%+-]/i,
+        "The password must contain the symbols A-Z, 0-9 and ._%+-."
+      ),
+    confirmPassword: Yup.string().test(
+      "passwords-match",
+      "Password confirmation does not match",
+      function (value) {
+        return this.parent.password === value;
+      }
+    ),
+    DOB: Yup.date()
+      .required("Required")
+      .max(
+        new Date(Date.now() - 1000 * 60 * 60 * 24 * 365 * 12),
+        "You must be at least 12 years old"
+      ),
+    gender: Yup.string().required("Required"),
+    phoneNumber: Yup.string()
+      .required("Required")
+      .matches(/80\d{8}/, "Phone number should have format 80(29)3456789 "),
+  });
+
+  //
+
   return (
     <div className="App">
       <h1>Registration form</h1>
@@ -17,40 +52,7 @@ function App() {
           gender: "",
           phoneNumber: "",
         }}
-        validate={(values) => {
-          const errors = {};
-          if (values.name.length < 2) {
-            errors.name = "Name should consist of more than one symbol";
-          }
-          if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(values.email)) {
-            errors.email = "Invalid email address";
-          }
-          if (!/^[A-Z0-9._%+-]/i.test(values.password)) {
-            errors.password =
-              "The password must contain the symbols A-Z and 0-9.";
-          } else if (values.password.length < 6) {
-            errors.password = "Password should has length more than 6 symbols";
-          } else if (values.password !== values.confirmPassword) {
-            errors.confirmPassword = "Password confirmation does not match";
-          }
-
-          if (!values.DOB) {
-            errors.DOB = "You did not indicate your date of birth";
-          }
-
-          if (!values.gender) {
-            errors.gender = "You did not indicate your gender";
-          }
-
-          if (/[!-/:-~]/i.test(values.phoneNumber)) {
-            errors.phoneNumber =
-              "Phone number should have format 375(29)3456789";
-          } else if (values.phoneNumber.length < 10) {
-            errors.phoneNumber =
-              "Phone number with country code should consist of at least 10 digits";
-          }
-          return errors;
-        }}
+        validationSchema={validationSchema}
         onSubmit={(values, { setSubmitting }) => {
           setTimeout(() => {
             alert(JSON.stringify(values, null, 2));
